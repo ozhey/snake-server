@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cors());
 
 const server = app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
-const io = socketIo(server, { cors: { origin: 'https://ozhey119.github.io/Snake' } });
+const io = socketIo(server, { cors: { origin: '*' } });
 
 const state = {};
 const intervals = {}
