@@ -15,7 +15,7 @@ app.use(cors());
 const server = app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: "https://ozhey119.github.io/Snake/",
     }
 });
 
