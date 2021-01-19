@@ -15,10 +15,10 @@ const DIRECTIONS = {
         'ArrowRight': { x: 1, y: 0 }, //right
     },
     two: {
-        'w': { x: 0, y: -1 }, //up
-        's': { x: 0, y: 1 }, //down
-        'a': { x: -1, y: 0 }, //left
-        'd': { x: 1, y: 0 }, //right
+        'KeyW': { x: 0, y: -1 }, //up
+        'KeyS': { x: 0, y: 1 }, //down
+        'KeyA': { x: -1, y: 0 }, //left
+        'KeyD': { x: 1, y: 0 }, //right
     }
 
 };
