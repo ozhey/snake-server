@@ -18,7 +18,7 @@ const createApple = (snakes, canvas) => {
     return newApple;
 }
 
-const initCanvas = (numOfPlayers) => {
+const initCanvas = (numOfPlayers = 1) => {
     return {
         width: CANVAS.baseWidth + numOfPlayers * 60,
         height: CANVAS.baseHeight + numOfPlayers * 60,
