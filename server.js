@@ -84,7 +84,7 @@ io.on("connection", (client) => {
         client.emit('leftRoom');
     }
 
-    function handleMoveSnake(key) {
+    function handleMoveSnake(key, roomName) {
         moveSnake(key, state[roomName], client.id);
     }
 
