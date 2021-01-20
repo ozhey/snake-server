@@ -59,10 +59,10 @@ const initGameState = (playersIds = []) => {
     }
 }
 
-const moveSnake = (key, state, roomName) => {
+const moveSnake = (key, state, snakeId) => {
     const newDirOne = DIRECTIONS.one[key];
-    if (newDirOne && state && 'snakes' in state) {
-        state.snakes[roomName].dir = newDirOne;
+    if (newDirOne && state && 'snakes' in state && snakeId in state.snakes) {
+        state.snakes[snakeId].dir = newDirOne;
     }
     const newDirTwo = DIRECTIONS.two[key];
     if (newDirTwo && state && 'snakes' in state && state.snakes['player2local']) {
