@@ -30,18 +30,14 @@ io.on("connection", (client) => {
     function handleNewGame(roomName, mode) {
         clearInterval(intervals[roomName]);
         let initState;
-        if (mode === 'solo') {
-            initState = initGameState(1, [roomName]);
-        } else if (mode === 'local2p') {
-            initState = initGameState(2, [roomName, 'player2local']);
-        } else if (mode === 'room') {
+        if (mode === 'local2p') {
+            initState = initGameState([roomName, 'player2local']);
+        } else {
             let playersIds = io.sockets.adapter.rooms.get(roomName);
             if (playersIds) { // take all the players in the room and make an array of ids
                 playersIds = Array.from(playersIds);
-            } else {
-                return;
             }
-            initState = initGameState(playersIds.length, playersIds);
+            initState = initGameState(playersIds);
         }
         state[roomName] = initState;
         io.to(roomName).emit('initGame', initState.canvas);

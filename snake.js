@@ -46,7 +46,8 @@ const initSnake = (numOfPlayers, i, canvas) => {
     }
 }
 
-const initGameState = (numOfPlayers, playersIds) => {
+const initGameState = (playersIds = []) => {
+    const numOfPlayers = playersIds.length;
     const canvas = initCanvas(numOfPlayers);
     const snakes = {};
     playersIds.forEach((id, index) => snakes[id] = initSnake(numOfPlayers, index, canvas));
