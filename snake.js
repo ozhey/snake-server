@@ -65,20 +65,12 @@ const moveSnake = (key, state, snakeId) => {
         state.snakes[snakeId].dir = newDirOne;
     }
     const newDirTwo = DIRECTIONS.two[key];
-    if (newDirTwo && state && 'snakes' in state && state.snakes['player2local']) {
+    if (newDirTwo && state && 'snakes' in state && 'player2local' in state.snakes) {
         state.snakes['player2local'].dir = newDirTwo;
     }
 };
 
-const checkCollision = (piece, snakes, canvas) => {
-    if (
-        piece.x * canvas.scale >= canvas.width ||
-        piece.x < 0 ||
-        piece.y * canvas.scale >= canvas.height ||
-        piece.y < 0
-    ) {
-        return true;
-    }
+const checkCollision = (piece, snakes) => {
     for (const snk in snakes) {
         for (const segment of snakes[snk].body) {
             if (piece.x === segment.x && piece.y === segment.y) {
@@ -89,62 +81,80 @@ const checkCollision = (piece, snakes, canvas) => {
     return false;
 }
 
+const createNewSnakeHead = (currentHead, dir, canvas) => {
+    let newHead = {
+        x: currentHead.x + dir.x,
+        y: currentHead.y + dir.y
+    }
+    // handle wall collision
+    if (newHead.x * canvas.scale >= canvas.width) {
+        return { x: 0, y: newHead.y }
+    } else if (newHead.x < 0) {
+        return { x: (canvas.width / canvas.scale) - 1, y: newHead.y }
+    } else if (newHead.y * canvas.scale >= canvas.height) {
+        return { x: newHead.x, y: 0 }
+    } else if (newHead.y < 0) {
+        return { x: newHead.x, y: (canvas.height / canvas.scale) - 1 }
+    } else {
+        return newHead;
+    }
+}
+
 // checks if there's a collision between new heads
 const checkNewHeadsCollision = (newSnakes) => {
+    let headCollisions = [];
     for (const [i, snk] of Object.entries(newSnakes)) {
         for (const [j, snk2] of Object.entries(newSnakes)) {
             if (snk.body[0].x === snk2.body[0].x && snk.body[0].y === snk2.body[0].y && i !== j) {
-                return [i, j];
+                headCollisions.push([i, j]);
             }
         }
     }
-    return false;
+    return headCollisions;
 }
 
-const lastSurvivor = (state) => {
+const lastSurvivor = (snakes) => {
     let aliveCounter = 0, survivor;
-    for (const snake in state.snakes) {
-        if (state.snakes[snake].speed !== 0) {
+    for (const snake in snakes) {
+        if (snakes[snake].speed !== 0) {
             aliveCounter += 1;
-            survivor = state.snakes[snake].color;
+            survivor = snakes[snake].color;
         }
     }
     if (aliveCounter === 1) {
-        state['lastSurvivor'] = survivor;
+        return survivor;
+    } else {
+        return null;
     }
 }
 
 const allDead = (snakes) => {
-    let dead = true;
+    let isDead = true;
     for (const snake in snakes) {
         if (snakes[snake].speed !== 0) {
-            dead = false;
+            isDead = false;
         }
     }
-    return dead;
+    return isDead;
 }
 
 
 const gameLoop = (state) => {
     const newSnakes = {};
-    let shouldCreateApple = false;
+    let shouldCreateApple = false, didSnakeDie = false;
     for (const snake in state.snakes) {
         const snakeCopy = JSON.parse(JSON.stringify(state.snakes[snake]));
         if (state.time % snakeCopy.speed === 0) {
-            let newSnakeHead = {
-                x: snakeCopy.body[0].x + snakeCopy.dir.x,
-                y: snakeCopy.body[0].y + snakeCopy.dir.y
+            let newSnakeHead = createNewSnakeHead(snakeCopy.body[0], snakeCopy.dir, state.canvas)
+            if (newSnakeHead.x === snakeCopy.body[1].x && newSnakeHead.y === snakeCopy.body[1].y) { // prevent reverse
+                let oppositeDir = { x: snakeCopy.dir.x * -1, y: snakeCopy.dir.y * -1 }
+                snakeCopy.dir = oppositeDir;
+                newSnakeHead = createNewSnakeHead(snakeCopy.body[0], snakeCopy.dir, state.canvas)
             }
-            // prevents reverse situation
-            if (newSnakeHead.x === snakeCopy.body[1].x && newSnakeHead.y === snakeCopy.body[1].y) {
-                newSnakeHead = {
-                    x: snakeCopy.body[0].x - snakeCopy.dir.x,
-                    y: snakeCopy.body[0].y - snakeCopy.dir.y
-                }
-            }
-            if (checkCollision(newSnakeHead, state.snakes, state.canvas)) {
+            if (checkCollision(newSnakeHead, state.snakes)) {
                 snakeCopy.speed = 0;
                 newSnakes[snake] = snakeCopy;
+                didSnakeDie = true;
                 continue;
             }
             snakeCopy.body.unshift(newSnakeHead);
@@ -161,19 +171,25 @@ const gameLoop = (state) => {
         }
         newSnakes[snake] = snakeCopy;
     }
+    const headCollisions = checkNewHeadsCollision(newSnakes);
+    headCollisions.forEach(collision => {
+        newSnakes[collision[0]].speed = 0;
+        newSnakes[collision[1]].speed = 0;
+        didSnakeDie = true;
+    })
     state.snakes = newSnakes;
     if (shouldCreateApple) {
         state.apple = createApple(state.snakes, state.canvas);
     }
-    const headCollisionResult = checkNewHeadsCollision(newSnakes);
-    if (headCollisionResult) {
-        state.snakes[headCollisionResult[0]].speed = 0;
-        state.snakes[headCollisionResult[1]].speed = 0;
-    }
     state.time += INTERVAL;
-    lastSurvivor(state);
-    if (allDead(state.snakes)) {
-        return 1;
+    if (didSnakeDie) {
+        let survivor = lastSurvivor(state.snakes);
+        if (survivor) {
+            state.lastSurvivor = survivor;
+        }
+        if (allDead(state.snakes)) {
+            return 1;
+        }
     }
 }
 

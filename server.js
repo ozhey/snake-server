@@ -50,6 +50,7 @@ io.on("connection", (client) => {
                 const winner = gameLoop(state[roomName]);
                 io.to(roomName).emit('gameState', state[roomName]);
                 if (winner) {
+                    console.log(state[roomName]);
                     clearInterval(intervals[roomName]);
                     io.to(roomName).emit('gameEnd', state[roomName]);
                     delete state[roomName];

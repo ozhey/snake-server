@@ -5,7 +5,7 @@ const CANVAS = {
     scale: 20
 }
 const INTERVAL = 30;
-const BASE_SPEED = 180;
+const BASE_SPEED = 780;
 const MAX_SPEED = 90;
 const DIRECTIONS = {
     one: {
