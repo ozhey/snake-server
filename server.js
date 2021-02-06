@@ -25,7 +25,12 @@ io.on("connection", (client) => {
     client.on("newGame", handleNewGame);
     client.on("joinRoom", handleJoinRoom);
     client.on("leaveRoom", handleLeaveRoom);
-
+    client.on('disconnecting', () => { // leave rooms explicitly so the game will end if there are no players
+        let rooms = Array.from(client.rooms);
+        rooms.forEach((room) => {
+            handleLeaveRoom(room)
+        });
+    });
 
     function handleNewGame(roomName, mode) {
         clearInterval(intervals[roomName]);
@@ -34,7 +39,7 @@ io.on("connection", (client) => {
             initState = initGameState([roomName, 'player2local']);
         } else {
             let playersIds = io.sockets.adapter.rooms.get(roomName);
-            if (playersIds) { // take all the players in the room and make an array of ids
+            if (playersIds) { // playerIds is a set
                 playersIds = Array.from(playersIds);
             }
             initState = initGameState(playersIds);
@@ -46,14 +51,11 @@ io.on("connection", (client) => {
 
     function startGameInterval(roomName) {
         intervals[roomName] = setInterval(() => {
-            if (state[roomName].time > 600 || state[roomName].time === 0) {
+            if (state[roomName].time > 600 || state[roomName].time === 0) { //0.6s start delay
                 const winner = gameLoop(state[roomName]);
                 io.to(roomName).emit('gameState', state[roomName]);
                 if (winner) {
-                    console.log(state[roomName]);
-                    clearInterval(intervals[roomName]);
-                    io.to(roomName).emit('gameEnd', state[roomName]);
-                    delete state[roomName];
+                    endGame(roomName);
                 }
             } else {
                 state[roomName].time += INTERVAL;
@@ -61,10 +63,14 @@ io.on("connection", (client) => {
         }, INTERVAL);
     }
 
+    function endGame(roomName) {
+        clearInterval(intervals[roomName]);
+        io.to(roomName).emit('gameEnd', state[roomName]);
+        delete state[roomName];
+    }
+
     function handleJoinRoom(roomName) {
-        if (!roomName) {
-            return;
-        }
+        if (!roomName) { return }
         client.join(roomName);
         client.emit('joinedRoom', roomName);
         if (state[roomName]) { // if a game is already in progress, init the canvas
@@ -75,8 +81,8 @@ io.on("connection", (client) => {
     function handleLeaveRoom(roomName) {
         client.leave(roomName);
         let numClients = io.sockets.adapter.rooms.get(roomName);
-        if (numClients) { // make sure the room is not empty before accessing .size
-            numClients = numClients.size;
+        if (!numClients) { // end the game if the room is empty
+            endGame(roomName);
         }
         client.emit('leftRoom');
     }
